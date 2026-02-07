@@ -1,13 +1,4 @@
-interface Keyword {
-    id: string
-    text: string
-    status: 'Idle' | 'Running' | 'Done' | 'Error' | 'Cancelled'
-    count: number
-}
-
-interface KeywordStorage {
-    keywords?: Keyword[]
-}
+import type { Keyword, KeywordStorage, ScrapeResultsStorage } from "../types";
 
 const input = document.getElementById('keywordInput') as HTMLInputElement
 const addBtn = document.getElementById('addBtn') as HTMLButtonElement
@@ -131,89 +122,86 @@ function renderKeywords(keywords: Keyword[]) {
 
 // Escuchador global para la lista (Event Delegation)
 listContainer.addEventListener('click', async (e) => {
-  const target = e.target as HTMLElement;
-  const button = target.closest('button'); // Busca el botón más cercano al clic
-  
-  if (!button) return;
+    const target = e.target as HTMLElement;
+    const button = target.closest('button'); // Busca el botón más cercano al clic
 
-  const action = button.getAttribute('data-action');
-  const id = button.getAttribute('data-id');
-  const site = button.getAttribute('data-site') as 'falabella' | 'mercadolibre';
+    if (!button) return;
 
-  if (action === 'delete' && id) {
-    await deleteKeyword(id);
-  } else if (action === 'scrap' && id && site) {
-    // En el Storage obtener la lista actual para buscar el texto de la keyword
-    const data = await chrome.storage.local.get('keywords') as KeywordStorage;
-    const currentKeywords = data.keywords || [];
-    const keywordObj = currentKeywords.find(k => k.id === id);
+    const action = button.getAttribute('data-action');
+    const id = button.getAttribute('data-id');
+    const site = button.getAttribute('data-site') as 'falabella' | 'mercadolibre';
 
-    if (keywordObj) {
-      console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
-      startScraping(keywordObj.text, site); 
+    if (action === 'delete' && id) {
+        await deleteKeyword(id);
+    } else if (action === 'scrap' && id && site) {
+        // En el Storage obtener la lista actual para buscar el texto de la keyword
+        const data = await chrome.storage.local.get('keywords') as KeywordStorage;
+        const currentKeywords = data.keywords || [];
+        const keywordObj = currentKeywords.find(k => k.id === id);
+
+        if (keywordObj) {
+            console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
+            startScraping(keywordObj, site);
+        }
     }
-  }
 });
 
 // (fn): Elimina una keyword y sus datos asociados del storage
 const deleteKeyword = async (id: string) => {
-  // Obtener los datos actuales del storage 
-  const dataKeywordsStorage = await chrome.storage.local.get(["keywords"]) as KeywordStorage;
-//   const dataResultsStorage = await chrome.storage.local.get(["results"]);
+    // Obtener los datos actuales del storage 
+    const dataKeywordsStorage = await chrome.storage.local.get(["keywords"]) as KeywordStorage;
+      const dataResultsStorage = await chrome.storage.local.get(["results"]) as ScrapeResultsStorage;
 
-  const currentKeywords: Keyword[] = dataKeywordsStorage.keywords || [];
-//   const currentResults = dataResultsStorage.results || {};
+    const currentKeywords: Keyword[] = dataKeywordsStorage.keywords || [];
+      const currentResults = dataResultsStorage.results || {};
 
-  // Filtrar la lista para remover la keyword seleccionada
-  const updatedKeywords = currentKeywords.filter(k => k.id !== id);
+    // Filtrar la lista para remover la keyword seleccionada
+    const updatedKeywords = currentKeywords.filter(k => k.id !== id);
 
-  // (Opcional) Eliminar también los productos scrapeados de esa keyword
-//   if (currentResults[id]) {
-//     delete currentResults[id];
-//   }
+    // (Opcional) Eliminar también los productos scrapeados de esa keyword
+      if (currentResults[id]) {
+        delete currentResults[id];
+      }
 
-  // Guardar los cambios de vuelta en el storage 
-  await chrome.storage.local.set({ 
-    keywords: updatedKeywords,
-    // results: currentResults 
-  });
+    // Guardar los cambios de vuelta en el storage 
+    await chrome.storage.local.set({
+        keywords: updatedKeywords,
+        results: currentResults 
+    });
 
-  // Volver a renderizar la UI para reflejar el cambio
-  renderKeywords(updatedKeywords);
+    // Volver a renderizar la UI para reflejar el cambio
+    renderKeywords(updatedKeywords);
 };
 
-async function startScraping(keywordText: string, site: 'falabella' | 'mercadolibre') {
-  
-    // 1. Construir la URL de búsqueda según el sitio
-  const searchUrl = site === 'falabella'
-    ? `https://www.falabella.com.pe/falabella-pe/search?Ntt=${encodeURIComponent(keywordText)}`
-    : `https://listado.mercadolibre.com.pe/${encodeURIComponent(keywordText)}`;
+// Función para actualizar el estado de una keyword en el storage y UI
+async function updateKeywordStatus(id: string, updates: Partial<Keyword>) {
+    const data = await chrome.storage.local.get("keywords") as KeywordStorage;
+    const keywords = data.keywords || [];
 
-  // 2. Crear la pestaña y esperar a que cargue (Requerimiento 2.2) 
-  const tab = await chrome.tabs.create({ url: searchUrl });
-
-  // 3. Listener para conectar cuando la página esté lista
-  chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-    if (tabId === tab.id && info.status === 'complete') {
-      chrome.tabs.onUpdated.removeListener(listener);
-      
-      // 4. Uso obligatorio de tabs.connect (Punto 5) 
-      const port = chrome.tabs.connect(tabId, { name: "scraping-channel" });
-
-      // Enviar mensaje inicial 'start' 
-      port.postMessage({ 
-        action: 'start', 
-        keyword: keywordText, 
-        site: site 
-      });
-
-      // Escuchar progreso y resultados del Content Script 
-      port.onMessage.addListener((msg) => {
-        if (msg.action === 'progress') {
-          console.log(`Progreso: ${msg.count} productos`);
-          // Aquí actualizarás tu UI con el contador [cite: 10]
-        }
-      });
+    const index = keywords.findIndex(k => k.id === id);
+    if (index !== -1) {
+        keywords[index] = { ...keywords[index], ...updates };
+        await chrome.storage.local.set({ keywords });
+        renderKeywords(keywords); // Refrescar la lista visualmente
     }
-  });
+}
+
+async function startScraping(keywordObj: Keyword, site: 'falabella' | 'mercadolibre') {
+    // Marcar como Running en la UI y Storage inmediatamente
+    await updateKeywordStatus(keywordObj.id, { status: 'Running' });
+
+    // 1. Construir la URL de búsqueda según el sitio
+    const searchUrl = site === 'falabella'
+        ? `https://www.falabella.com.pe/falabella-pe/search?Ntt=${encodeURIComponent(keywordObj.text)}`
+        : `https://listado.mercadolibre.com.pe/${encodeURIComponent(keywordObj.text)}`;
+
+    // Avisar al background que inicie el proceso
+    chrome.runtime.sendMessage({
+        action: "prepare_scraping",
+        url: searchUrl,
+        keyword: keywordObj.text,
+        id: keywordObj.id,
+        site: site
+    });
+
 }
