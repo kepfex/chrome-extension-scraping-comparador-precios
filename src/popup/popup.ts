@@ -138,13 +138,20 @@ listContainer.addEventListener('click', async (e) => {
 
   const action = button.getAttribute('data-action');
   const id = button.getAttribute('data-id');
-  const site = button.getAttribute('data-site');
+  const site = button.getAttribute('data-site') as 'falabella' | 'mercadolibre';
 
   if (action === 'delete' && id) {
     await deleteKeyword(id);
   } else if (action === 'scrap' && id && site) {
-    // Aquí llamar a la función de scraping
-    console.log(`Iniciando scraping para ${id} en ${site}`);
+    // En el Storage obtener la lista actual para buscar el texto de la keyword
+    const data = await chrome.storage.local.get('keywords') as KeywordStorage;
+    const currentKeywords = data.keywords || [];
+    const keywordObj = currentKeywords.find(k => k.id === id);
+
+    if (keywordObj) {
+      console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
+      startScraping(keywordObj.text, site); 
+    }
   }
 });
 
@@ -174,3 +181,39 @@ const deleteKeyword = async (id: string) => {
   // Volver a renderizar la UI para reflejar el cambio
   renderKeywords(updatedKeywords);
 };
+
+async function startScraping(keywordText: string, site: 'falabella' | 'mercadolibre') {
+  
+    // 1. Construir la URL de búsqueda según el sitio
+  const searchUrl = site === 'falabella'
+    ? `https://www.falabella.com.pe/falabella-pe/search?Ntt=${encodeURIComponent(keywordText)}`
+    : `https://listado.mercadolibre.com.pe/${encodeURIComponent(keywordText)}`;
+
+  // 2. Crear la pestaña y esperar a que cargue (Requerimiento 2.2) 
+  const tab = await chrome.tabs.create({ url: searchUrl });
+
+  // 3. Listener para conectar cuando la página esté lista
+  chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+    if (tabId === tab.id && info.status === 'complete') {
+      chrome.tabs.onUpdated.removeListener(listener);
+      
+      // 4. Uso obligatorio de tabs.connect (Punto 5) 
+      const port = chrome.tabs.connect(tabId, { name: "scraping-channel" });
+
+      // Enviar mensaje inicial 'start' 
+      port.postMessage({ 
+        action: 'start', 
+        keyword: keywordText, 
+        site: site 
+      });
+
+      // Escuchar progreso y resultados del Content Script 
+      port.onMessage.addListener((msg) => {
+        if (msg.action === 'progress') {
+          console.log(`Progreso: ${msg.count} productos`);
+          // Aquí actualizarás tu UI con el contador [cite: 10]
+        }
+      });
+    }
+  });
+}
