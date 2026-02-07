@@ -1,4 +1,4 @@
-:root {
+/* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -93,4 +93,20 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+} */
+
+@import "tailwindcss";
+
+/* Estilos personalizados usando @theme o clases estándar */
+@layer components {
+  .status-badge {
+    @apply text-[10px] px-2 py-0.5 rounded-full font-bold uppercase;
+  }
+  
+  /* Estados requeridos por el reto [cite: 9] */
+  .status-idle { @apply bg-slate-200 text-slate-600; }
+  .status-running { @apply bg-amber-100 text-amber-700 animate-pulse; }
+  .status-done { @apply bg-green-100 text-green-700; }
+  .status-error { @apply bg-red-100 text-red-700; }
+  .status-cancelled { @apply bg-gray-100 text-gray-400; }
 }

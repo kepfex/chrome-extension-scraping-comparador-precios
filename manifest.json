@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Scraping de Falabella y Mercado Libre",
+  "name": "Comparador de Precios - Scraping de Falabella y Mercado Libre",
   "version": "1.0",
   "description": "Resumen de productos para comparar precios",
-  "permissions": ["scripting", "activeTab"],
+  "permissions": ["storage", "scripting", "activeTab"],
   "host_permissions": ["http://localhost:3000/*"],
   "action": {
     "default_popup": "src/popup/popup.html"

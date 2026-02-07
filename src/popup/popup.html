@@ -1,14 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<html lang="es">
 
-    <link rel="stylesheet" href="popup.css">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparador de Precios</title>
+    <link rel="stylesheet" href="./popup.css">
 </head>
-<body>
-    
-     <script type="module" src="/src/popup/popup.ts"></script>
+
+<body class="w-[600px] bg-slate-50 text-slate-800 antialiased font-sans">
+    <div class="p-5">
+        <header class="mb-6 border-b border-slate-200 pb-4">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h1 class="text-xs font-black uppercase tracking-widest text-slate-400">
+                        Scraping F & ML
+                    </h1>
+                    <h2 class="text-lg font-extrabold text-blue-700">
+                        Comparador de Precios Pro
+                    </h2>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded">
+                        MV3 Edition
+                    </span>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label for="keywordInput" class="text-xs font-bold text-slate-600 ml-2">
+                    Nueva búsqueda de productos:
+                </label>
+                <div class="flex gap-3">
+                    <input type="text" id="keywordInput"
+                        placeholder="Escribe una keyword (Ej: Nintendo Switch, Laptop i7...)"
+                        class="flex-1 px-4 py-1 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" />
+                    <button id="addBtn"
+                        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-1 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 flex items-center gap-2">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main id="keywordList" class="grid grid-cols-1 gap-4">
+        </main>
+    </div>
+
+    <script type="module" src="./popup.ts"></script>
 </body>
+
 </html>
