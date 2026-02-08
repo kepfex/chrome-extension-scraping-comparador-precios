@@ -262,9 +262,9 @@ async function openStatsModal(keywordId: string) {
 
   // 🔥 Ordenar por mayor oportunidad de ahorro
   const sorted = stats.sort((a, b) => {
-    if (a.priceDifference === null) return 1;
-    if (b.priceDifference === null) return -1;
-    return Math.abs(b.priceDifference) - Math.abs(a.priceDifference);
+    if (!a.savings) return 1;
+    if (!b.savings) return -1;
+    return b.savings - a.savings;
   });
 
   renderStatsContent(buildStatsHTML(sorted));
@@ -307,11 +307,21 @@ function buildStatsHTML(stats: any[]) {
 
                     </div>
 
-                    ${group.priceDifference !== null ? `
-                        <div class="mt-2 text-xs font-semibold ${group.priceDifference > 0 ? 'text-red-600' : 'text-green-600'}">
-                            Diferencia mínima: S/ ${group.priceDifference.toFixed(2)}
+                    ${group.bestSite ? `
+                        <div class="mt-2 p-2 rounded-lg text-xs font-semibold ${
+                            group.bestSite === "Falabella"
+                                ? "bg-lime-100 text-lime-700"
+                                : "bg-yellow-100 text-yellow-700"
+                        }">
+                            🏷 Mejor precio en ${group.bestSite} <br>
+                            💰 Ahorro: S/ ${group.savings?.toFixed(2)} 
+                            (${group.savingsPercent?.toFixed(1)}%)
                         </div>
-                    ` : ''}
+                    ` : `
+                        <div class="mt-2 text-xs text-slate-400">
+                            No comparable entre sitios
+                        </div>
+                    `}
                 </div>
             `).join("")}
         </div>

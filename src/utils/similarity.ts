@@ -1,4 +1,4 @@
-import type { ProductGroup, ScrapedProduct } from "../types";
+import type { ProductGroup, ProductGroupStats, ScrapedProduct } from "../types";
 
 
 const STOPWORDS = [
@@ -52,12 +52,6 @@ export function groupProducts(products: ScrapedProduct[]): ProductGroup[] {
 }
 
 // Calcular estadisticas -> añadimos métricas
-export type ProductGroupStats = ProductGroup & {
-  minPrice: number;
-  maxPrice: number;
-  avgPrice: number;
-  priceDifference: number | null;
-};
 
 export function calculateStats(groups: ProductGroup[]): ProductGroupStats[] {
   return groups.map(group => {
@@ -65,34 +59,61 @@ export function calculateStats(groups: ProductGroup[]): ProductGroupStats[] {
       .map(p => p.precio_numérico)
       .filter((p): p is number => p !== null);
 
+    if (prices.length === 0) {
+      return {
+        key: group.key,
+        falabellaCount: 0,
+        mercadolibreCount: 0,
+        minPrice: 0,
+        maxPrice: 0,
+        avgPrice: 0,
+        bestSite: null,
+        savings: null,
+        savingsPercent: null
+      };
+    }
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const avgPrice =
       prices.reduce((a, b) => a + b, 0) / prices.length;
 
     const falabellaPrices = group.products
-      .filter(p => p.site === "falabella")
-      .map(p => p.precio_numérico)
-      .filter((p): p is number => p !== null);
+      .filter(p => p.site === "falabella" && p.precio_numérico !== null)
+      .map(p => p.precio_numérico as number);
 
     const mlPrices = group.products
-      .filter(p => p.site === "mercadolibre")
-      .map(p => p.precio_numérico)
-      .filter((p): p is number => p !== null);
+      .filter(p => p.site === "mercadolibre" && p.precio_numérico !== null)
+      .map(p => p.precio_numérico as number);
 
-    let priceDifference: number | null = null;
+    let bestSite: "Falabella" | "MercadoLibre" | null = null;
+    let savings: number | null = null;
+    let savingsPercent: number | null = null;
 
     if (falabellaPrices.length && mlPrices.length) {
-      priceDifference =
-        Math.min(...falabellaPrices) - Math.min(...mlPrices);
+      const minFalabella = Math.min(...falabellaPrices);
+      const minML = Math.min(...mlPrices);
+
+      if (minFalabella < minML) {
+        bestSite = "Falabella";
+        savings = minML - minFalabella;
+        savingsPercent = (savings / minML) * 100;
+      } else if (minML < minFalabella) {
+        bestSite = "MercadoLibre";
+        savings = minFalabella - minML;
+        savingsPercent = (savings / minFalabella) * 100;
+      }
     }
 
     return {
-      ...group,
+      key: group.key,
+      falabellaCount: falabellaPrices.length,
+      mercadolibreCount: mlPrices.length,
       minPrice,
       maxPrice,
       avgPrice,
-      priceDifference
+      bestSite,
+      savings,
+      savingsPercent
     };
   });
 }

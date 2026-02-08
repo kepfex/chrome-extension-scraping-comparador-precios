@@ -1,3 +1,5 @@
+export type SiteName = "Falabella" | "MercadoLibre";
+
 export interface Keyword {
     id: string
     text: string
@@ -44,5 +46,27 @@ export type ProductGroup = {
   products: ScrapedProduct[];
   falabellaCount: number;
   mercadolibreCount: number;
+};
+// export type ProductGroupStats = ProductGroup & {
+//   minPrice: number;
+//   maxPrice: number;
+//   avgPrice: number;
+//   priceDifference: number | null;
+// };
+
+export type ProductGroupStats = {
+  key: string;
+
+  falabellaCount: number;
+  mercadolibreCount: number;
+
+  minPrice: number;
+  maxPrice: number;
+  avgPrice: number;
+
+  bestSite: "Falabella" | "MercadoLibre" | null;
+
+  savings: number | null;
+  savingsPercent: number | null;
 };
 
