@@ -11,7 +11,7 @@ chrome.runtime.onConnect.addListener((port) => {
     const cards = document.querySelectorAll(".poly-card");
     const products: ScrapedProduct[] = [];
 
-    cards.forEach((card, index) => {
+    cards.forEach((card) => {
       const title = card.querySelector(".poly-component__title")?.textContent?.trim() || null;
       const link = (card.querySelector("a") as HTMLAnchorElement)?.href;
       const fraction = card.querySelector(".andes-money-amount__fraction")?.textContent || "";

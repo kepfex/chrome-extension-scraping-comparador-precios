@@ -1,4 +1,5 @@
 import type { Keyword, KeywordStorage, ScrapedProduct, ScrapeResultsStorage } from "../types";
+import { calculateStats, groupProducts } from "../utils/similarity";
 
 const input = document.getElementById('keywordInput') as HTMLInputElement
 const addBtn = document.getElementById('addBtn') as HTMLButtonElement
@@ -243,26 +244,78 @@ async function openStatsModal(keywordId: string) {
 
   if (!keywordResults) {
     statsContent.innerHTML = "<p>No hay datos para esta keyword.</p>";
-  } else {
-    const falabella = keywordResults.falabella || [];
-    const ml = keywordResults.mercadolibre || [];
-
-    statsContent.innerHTML = `
-      <div class="grid grid-cols-2 gap-6">
-        <div>
-          <h4 class="font-bold mb-2 text-lime-600">Falabella</h4>
-          <p>Total productos: ${falabella.length}</p>
-        </div>
-        <div>
-          <h4 class="font-bold mb-2 text-yellow-600">Mercado Libre</h4>
-          <p>Total productos: ${ml.length}</p>
-        </div>
-      </div>
-    `;
+    return;
   }
+
+  const falabella = keywordResults.falabella || [];
+  const mercadolibre = keywordResults.mercadolibre || [];
+
+  const allProducts = [...falabella, ...mercadolibre];
+
+  if (allProducts.length === 0) {
+    renderStatsContent("<p>No hay productos para analizar.</p>");
+    return;
+  }
+
+  const groups = groupProducts(allProducts);
+  const stats = calculateStats(groups);
+
+  // 🔥 Ordenar por mayor oportunidad de ahorro
+  const sorted = stats.sort((a, b) => {
+    if (a.priceDifference === null) return 1;
+    if (b.priceDifference === null) return -1;
+    return Math.abs(b.priceDifference) - Math.abs(a.priceDifference);
+  });
+
+  renderStatsContent(buildStatsHTML(sorted));
 
   statsModal.classList.remove("hidden");
   statsModal.classList.add("flex");
+}
+
+function renderStatsContent(html: string) {
+  const content = document.getElementById("statsContent");
+  if (content) content.innerHTML = html;
+
+  const modal = document.getElementById("statsModal");
+  modal?.classList.remove("hidden");
+}
+
+function buildStatsHTML(stats: any[]) {
+  if (!stats.length) return "<p>No se encontraron grupos similares.</p>";
+
+  return `
+        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+            ${stats.map(group => `
+                <div class="border rounded-xl p-3 bg-slate-50">
+                    <h4 class="font-bold text-sm mb-2">
+                        ${group.key}
+                    </h4>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+
+                        <div>
+                            <p><strong>Falabella:</strong> ${group.falabellaCount}</p>
+                            <p><strong>M. Libre:</strong> ${group.mercadolibreCount}</p>
+                        </div>
+
+                        <div>
+                            <p><strong>Mín:</strong> S/ ${group.minPrice.toFixed(2)}</p>
+                            <p><strong>Máx:</strong> S/ ${group.maxPrice.toFixed(2)}</p>
+                            <p><strong>Prom:</strong> S/ ${group.avgPrice.toFixed(2)}</p>
+                        </div>
+
+                    </div>
+
+                    ${group.priceDifference !== null ? `
+                        <div class="mt-2 text-xs font-semibold ${group.priceDifference > 0 ? 'text-red-600' : 'text-green-600'}">
+                            Diferencia mínima: S/ ${group.priceDifference.toFixed(2)}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join("")}
+        </div>
+    `;
 }
 
 

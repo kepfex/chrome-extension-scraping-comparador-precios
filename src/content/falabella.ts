@@ -50,7 +50,7 @@ console.log("%c [Scraper] Señal recibida. Iniciando...", "color: #22c55e; font-
         timestamp: new Date().toISOString(),
         // posicion: index + 1,
         posicion: 0,
-        titulo: titleEl.textContent?.trim() || null,
+        titulo: titleEl.textContent?.trim(),
         precio_visible: rawPrice.trim(),
         precio_numérico: numericPrice || null,
         url: linkEl.href,

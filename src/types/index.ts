@@ -14,7 +14,7 @@ export interface ScrapedProduct {
     keyword: string;
     timestamp: string;
     posicion: number;
-    titulo: string | null;
+    titulo: string;
     precio_visible: string;
     precio_numérico: number | null;
     url: string;
@@ -39,5 +39,10 @@ export interface PrepareScrapingMessage {
   site: 'falabella' | 'mercadolibre';
 }
 
-
+export type ProductGroup = {
+  key: string;
+  products: ScrapedProduct[];
+  falabellaCount: number;
+  mercadolibreCount: number;
+};
 
