@@ -7,9 +7,11 @@ const listContainer = document.getElementById('keywordList') as HTMLElement
 // Cargar datos al abrir el popup
 document.addEventListener('DOMContentLoaded', async () => {
   const dataKeywords = await chrome.storage.local.get('keywords') as KeywordStorage;
+  const dataResults = await chrome.storage.local.get('results') as ScrapeResultsStorage;
 
   const keywords: Keyword[] = dataKeywords.keywords || [];
-  renderKeywords(keywords);
+  const results = dataResults.results || {}
+  renderKeywords(keywords, results);
 })
 
 // Agregar una nueva Keyword
@@ -38,7 +40,7 @@ addBtn.addEventListener('click', async () => {
 })
 
 // Renderizar los cards Keywords
-function renderKeywords(keywords: Keyword[]) {
+function renderKeywords(keywords: Keyword[], results?: ScrapeResultsStorage["results"]) {
   if (keywords.length === 0) {
     listContainer.innerHTML = `
       <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
@@ -49,7 +51,9 @@ function renderKeywords(keywords: Keyword[]) {
 
   listContainer.innerHTML = keywords.map(kw => {
     const isRunning = kw.status === 'Running';
-    
+    const keywordResults = results?.[kw.id];
+    const hasProducts = keywordResults && ((keywordResults.falabella?.length || 0) || (keywordResults.mercadolibre?.length || 0) > 0)
+
     return `
     <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative group">
       
@@ -98,6 +102,17 @@ function renderKeywords(keywords: Keyword[]) {
                     M. Libre
                   </button>
                 </div> 
+                <div>
+                  ${hasProducts ? `
+                    <button
+                      data-action="toggle-products" 
+                      data-id="${kw.id}"
+                      class="w-full mt-2 text-xs hover:font-medium text-blue-500 hover:text-blue-600 underline cursor-pointer"
+                    >
+                      Ver productos
+                    </button>
+                    ` : ''}
+                </div>
             </fieldset>
 
             <button 
@@ -118,6 +133,26 @@ function renderKeywords(keywords: Keyword[]) {
           ` : ''}
         </div>
       </div>
+      
+      <div 
+          id="products-${kw.id}" 
+          class="transition-all duration-300 overflow-hidden max-h-0"
+      >
+          <div class="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
+              
+              <div>
+                  <h4 class="text-xs font-bold mb-2 text-lime-600">Falabella</h4>
+                  ${renderProductList(keywordResults?.falabella || [])}
+              </div>
+
+              <div>
+                  <h4 class="text-xs font-bold mb-2 text-yellow-600">Mercado Libre</h4>
+                  ${renderProductList(keywordResults?.mercadolibre || [])}
+              </div>
+
+          </div>
+      </div>
+
     </div>
     `;
   }).join('');
@@ -146,9 +181,41 @@ listContainer.addEventListener('click', async (e) => {
       console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
       startScraping(keywordObj, site);
     }
-  } 
+  } else if (action === 'toggle-products' && id) { // Modo plegable | Toggle
+    const panel = document.getElementById(`products-${id}`);
+    if (!panel) return;
+
+    // panel.classList.toggle('hidden');
+
+    // button.textContent = panel.classList.contains('hidden')
+    //   ? 'Ver productos'
+    //   : 'Ocultar productos';
+
+    if (panel.style.maxHeight) {
+      panel.style.maxHeight = '';
+      button.textContent = 'Ver productos'
+      panel.classList.remove('mt-4', 'border-t', 'border-slate-200', 'pt-4')
+    } else {
+      panel.style.maxHeight = panel.scrollHeight + "px";
+      button.textContent = 'Ocultar productos'
+      panel.classList.add('mt-4', 'border-t', 'border-slate-200', 'pt-4')
+    }
+  }
 });
 
+
+function renderProductList(products: ScrapedProduct[]) {
+  if (!products.length) {
+    return `<p class="text-xs text-slate-400">Sin productos</p>`;
+  }
+
+  return products.map(p => `
+        <div class="mb-2 p-2 border rounded-lg bg-slate-50 text-xs">
+            <p class="font-semibold truncate">${p.titulo}</p>
+            <p class="text-slate-500">${p.precio_visible}</p>
+        </div>
+    `).join('');
+}
 
 
 // (fn): Elimina una keyword y sus datos asociados del storage

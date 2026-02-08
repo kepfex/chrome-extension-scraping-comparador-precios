@@ -31,7 +31,6 @@ chrome.runtime.onMessage.addListener((request) => {
 
     if (request.action === "cancel_scraping") {
         isCancelled = true;
-
     }
 });
 
