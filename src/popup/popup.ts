@@ -4,6 +4,10 @@ const input = document.getElementById('keywordInput') as HTMLInputElement
 const addBtn = document.getElementById('addBtn') as HTMLButtonElement
 const listContainer = document.getElementById('keywordList') as HTMLElement
 
+const statsModal = document.getElementById("statsModal") as HTMLElement;
+const statsContent = document.getElementById("statsContent") as HTMLElement;
+const closeStatsModal = document.getElementById("closeStatsModal") as HTMLButtonElement;
+
 // Cargar datos al abrir el popup
 document.addEventListener('DOMContentLoaded', async () => {
   const dataKeywords = await chrome.storage.local.get('keywords') as KeywordStorage;
@@ -13,6 +17,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const results = dataResults.results || {}
   renderKeywords(keywords, results);
 })
+
+closeStatsModal.addEventListener("click", () => {
+  statsModal.classList.add("hidden");
+});
 
 // Agregar una nueva Keyword
 addBtn.addEventListener('click', async () => {
@@ -207,6 +215,8 @@ listContainer.addEventListener('click', async (e) => {
       button.textContent = 'Ocultar productos'
       panel.classList.add('mt-4', 'border-t', 'border-slate-200', 'pt-4')
     }
+  } else if (action === 'stats' && id) {
+    openStatsModal(id);
   }
 });
 
@@ -222,6 +232,37 @@ function renderProductList(products: ScrapedProduct[]) {
             <p class="text-slate-500">${p.precio_visible}</p>
         </div>
     `).join('');
+}
+
+// Función para abrir modal
+async function openStatsModal(keywordId: string) {
+  const data = await chrome.storage.local.get("results") as ScrapeResultsStorage;
+  const results = data.results || {};
+
+  const keywordResults = results[keywordId];
+
+  if (!keywordResults) {
+    statsContent.innerHTML = "<p>No hay datos para esta keyword.</p>";
+  } else {
+    const falabella = keywordResults.falabella || [];
+    const ml = keywordResults.mercadolibre || [];
+
+    statsContent.innerHTML = `
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-bold mb-2 text-lime-600">Falabella</h4>
+          <p>Total productos: ${falabella.length}</p>
+        </div>
+        <div>
+          <h4 class="font-bold mb-2 text-yellow-600">Mercado Libre</h4>
+          <p>Total productos: ${ml.length}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  statsModal.classList.remove("hidden");
+  statsModal.classList.add("flex");
 }
 
 
