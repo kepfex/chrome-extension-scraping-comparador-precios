@@ -31,6 +31,11 @@ chrome.runtime.onMessage.addListener((request) => {
 
     if (request.action === "cancel_scraping") {
         isCancelled = true;
+
+        // Cerramos el tab si es Cancelado por el usuario
+        if (activeTabId) {
+            chrome.tabs.remove(activeTabId);
+        }
     }
 });
 

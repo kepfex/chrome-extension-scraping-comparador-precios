@@ -126,6 +126,8 @@ function renderKeywords(keywords: Keyword[], results?: ScrapeResultsStorage["res
 
           ${isRunning ? `
             <button 
+                data-action="cancel"
+                data-id="${kw.id}"
                 class="w-full py-2 text-[11px] bg-red-200 text-white rounded-xl font-black uppercase tracking-wider hover:bg-red-700 transition-all shadow-md rounded-sm flex items-center justify-center gap-2"
             >
               <span class="animate-pulse">🛑</span> Detener Proceso
@@ -181,6 +183,11 @@ listContainer.addEventListener('click', async (e) => {
       console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
       startScraping(keywordObj, site);
     }
+  } else if (action === 'cancel' && id) {
+
+    chrome.runtime.sendMessage({ action: "cancel_scraping" });
+    await updateKeywordStatus(id, { status: "Cancelled" });
+
   } else if (action === 'toggle-products' && id) { // Modo plegable | Toggle
     const panel = document.getElementById(`products-${id}`);
     if (!panel) return;
