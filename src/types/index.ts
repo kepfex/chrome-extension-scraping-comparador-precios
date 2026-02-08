@@ -23,6 +23,21 @@ export interface ScrapedProduct {
 }
 
 export interface ScrapeResultsStorage {
-  results?: Record<string, ScrapedProduct[]>; 
+  results?: {
+    [keywordId: string]: {
+      falabella: ScrapedProduct[];
+      mercadolibre: ScrapedProduct[];
+    }
+  }
 }
+
+export interface PrepareScrapingMessage {
+  action: "prepare_scraping";
+  url: string;
+  keyword: string;
+  id: string;
+  site: 'falabella' | 'mercadolibre';
+}
+
+
 

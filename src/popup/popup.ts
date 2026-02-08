@@ -1,4 +1,4 @@
-import type { Keyword, KeywordStorage, ScrapeResultsStorage } from "../types";
+import type { Keyword, KeywordStorage, ScrapedProduct, ScrapeResultsStorage } from "../types";
 
 const input = document.getElementById('keywordInput') as HTMLInputElement
 const addBtn = document.getElementById('addBtn') as HTMLButtonElement
@@ -6,50 +6,51 @@ const listContainer = document.getElementById('keywordList') as HTMLElement
 
 // Cargar datos al abrir el popup
 document.addEventListener('DOMContentLoaded', async () => {
-    const data = await chrome.storage.local.get('keywords') as KeywordStorage;
-    const keywords: Keyword[] = data.keywords || [];
-    renderKeywords(keywords);
+  const dataKeywords = await chrome.storage.local.get('keywords') as KeywordStorage;
+
+  const keywords: Keyword[] = dataKeywords.keywords || [];
+  renderKeywords(keywords);
 })
 
 // Agregar una nueva Keyword
 addBtn.addEventListener('click', async () => {
-    const text = input.value.trim();
-    if (!text) return;
+  const text = input.value.trim();
+  if (!text) return;
 
-    const newKeyword: Keyword = {
-        id: crypto.randomUUID(),
-        text,
-        status: 'Idle',
-        count: 0
-    }
+  const newKeyword: Keyword = {
+    id: crypto.randomUUID(),
+    text,
+    status: 'Idle',
+    count: 0
+  }
 
-    const data = await chrome.storage.local.get('keywords') as KeywordStorage;
+  const data = await chrome.storage.local.get('keywords') as KeywordStorage;
 
-    // Aseguramos que current sea un array vacío si no existe nada aún
-    const currentKeywords: Keyword[] = data.keywords || [];
+  // Aseguramos que current sea un array vacío si no existe nada aún
+  const currentKeywords: Keyword[] = data.keywords || [];
 
-    const updatedKeywords = [newKeyword, ...currentKeywords];
+  const updatedKeywords = [newKeyword, ...currentKeywords];
 
-    await chrome.storage.local.set({ keywords: updatedKeywords });
+  await chrome.storage.local.set({ keywords: updatedKeywords });
 
-    input.value = '';
-    renderKeywords(updatedKeywords)
+  input.value = '';
+  renderKeywords(updatedKeywords)
 })
 
 // Renderizar los cards Keywords
 function renderKeywords(keywords: Keyword[]) {
-    if (keywords.length === 0) {
-        listContainer.innerHTML = `
+  if (keywords.length === 0) {
+    listContainer.innerHTML = `
       <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
         <p class="text-slate-400 font-medium">No hay keywords registradas aún.</p>
       </div>`;
-        return;
-    }
+    return;
+  }
 
-    listContainer.innerHTML = keywords.map(kw => {
-        const isRunning = kw.status === 'Running';
-
-        return `
+  listContainer.innerHTML = keywords.map(kw => {
+    const isRunning = kw.status === 'Running';
+    
+    return `
     <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative group">
       
       <button 
@@ -81,20 +82,22 @@ function renderKeywords(keywords: Keyword[]) {
         <div class="flex flex-col gap-3 min-w-[300px]">
           <div class="flex items-stretch gap-3">
             
-            <fieldset class="flex-1 border border-slate-100 rounded-xl p-2 flex gap-2 bg-slate-50/50">
+            <fieldset class="flex-1 border border-slate-200 rounded-xl p-2 bg-slate-50/50">
               <legend class="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">Start Scraping en:</legend>
-              <button 
-                class="flex-1 btn-action cursor-pointer bg-lime-500 hover:bg-lime-600 text-white border-none font-bold py-1 shadow-sm rounded-sm transition-all"
-                data-action="scrap" data-site="falabella" data-id="${kw.id}"
-              >
-                Falabella
-              </button>
-              <button 
-                class="flex-1 btn-action cursor-pointer bg-yellow-400 hover:bg-yellow-500 text-slate-800 border-none font-bold py-1 shadow-sm rounded-sm transition-all"
-                data-action="scrap" data-site="mercadolibre" data-id="${kw.id}"
-              >
-                M. Libre
-              </button>
+                <div class="flex gap-2"> 
+                  <button 
+                    class="flex-1 btn-action cursor-pointer bg-lime-500 hover:bg-lime-600 text-white border-none font-bold py-1 shadow-sm rounded-sm transition-all"
+                    data-action="scrap" data-site="falabella" data-id="${kw.id}"
+                  >
+                    Falabella
+                  </button>
+                  <button 
+                    class="flex-1 btn-action cursor-pointer bg-yellow-400 hover:bg-yellow-500 text-slate-800 border-none font-bold py-1 shadow-sm rounded-sm transition-all"
+                    data-action="scrap" data-site="mercadolibre" data-id="${kw.id}"
+                  >
+                    M. Libre
+                  </button>
+                </div> 
             </fieldset>
 
             <button 
@@ -108,7 +111,7 @@ function renderKeywords(keywords: Keyword[]) {
 
           ${isRunning ? `
             <button 
-                class="w-full py-2 text-[11px] bg-red-600 text-white rounded-xl font-black uppercase tracking-wider hover:bg-red-700 transition-all shadow-md rounded-sm flex items-center justify-center gap-2"
+                class="w-full py-2 text-[11px] bg-red-200 text-white rounded-xl font-black uppercase tracking-wider hover:bg-red-700 transition-all shadow-md rounded-sm flex items-center justify-center gap-2"
             >
               <span class="animate-pulse">🛑</span> Detener Proceso
             </button>
@@ -117,91 +120,93 @@ function renderKeywords(keywords: Keyword[]) {
       </div>
     </div>
     `;
-    }).join('');
+  }).join('');
 }
 
 // Escuchador global para la lista (Event Delegation)
 listContainer.addEventListener('click', async (e) => {
-    const target = e.target as HTMLElement;
-    const button = target.closest('button'); // Busca el botón más cercano al clic
+  const target = e.target as HTMLElement;
+  const button = target.closest('button'); // Busca el botón más cercano al clic
 
-    if (!button) return;
+  if (!button) return;
 
-    const action = button.getAttribute('data-action');
-    const id = button.getAttribute('data-id');
-    const site = button.getAttribute('data-site') as 'falabella' | 'mercadolibre';
+  const action = button.getAttribute('data-action');
+  const id = button.getAttribute('data-id');
+  const site = button.getAttribute('data-site') as 'falabella' | 'mercadolibre';
 
-    if (action === 'delete' && id) {
-        await deleteKeyword(id);
-    } else if (action === 'scrap' && id && site) {
-        // En el Storage obtener la lista actual para buscar el texto de la keyword
-        const data = await chrome.storage.local.get('keywords') as KeywordStorage;
-        const currentKeywords = data.keywords || [];
-        const keywordObj = currentKeywords.find(k => k.id === id);
+  if (action === 'delete' && id) {
+    await deleteKeyword(id);
+  } else if (action === 'scrap' && id && site) {
+    // En el Storage obtener la lista actual para buscar el texto de la keyword
+    const data = await chrome.storage.local.get('keywords') as KeywordStorage;
+    const currentKeywords = data.keywords || [];
+    const keywordObj = currentKeywords.find(k => k.id === id);
 
-        if (keywordObj) {
-            console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
-            startScraping(keywordObj, site);
-        }
+    if (keywordObj) {
+      console.log(`Iniciando scraping para ${keywordObj.text} en ${site}`);
+      startScraping(keywordObj, site);
     }
+  } 
 });
+
+
 
 // (fn): Elimina una keyword y sus datos asociados del storage
 const deleteKeyword = async (id: string) => {
-    // Obtener los datos actuales del storage 
-    const dataKeywordsStorage = await chrome.storage.local.get(["keywords"]) as KeywordStorage;
-      const dataResultsStorage = await chrome.storage.local.get(["results"]) as ScrapeResultsStorage;
+  // Obtener los datos actuales del storage 
+  const dataKeywordsStorage = await chrome.storage.local.get(["keywords"]) as KeywordStorage;
+  const dataResultsStorage = await chrome.storage.local.get(["results"]) as ScrapeResultsStorage;
 
-    const currentKeywords: Keyword[] = dataKeywordsStorage.keywords || [];
-      const currentResults = dataResultsStorage.results || {};
+  const currentKeywords: Keyword[] = dataKeywordsStorage.keywords || [];
+  const currentResults = dataResultsStorage.results || {};
 
-    // Filtrar la lista para remover la keyword seleccionada
-    const updatedKeywords = currentKeywords.filter(k => k.id !== id);
+  // Filtrar la lista para remover la keyword seleccionada
+  const updatedKeywords = currentKeywords.filter(k => k.id !== id);
 
-    // (Opcional) Eliminar también los productos scrapeados de esa keyword
-      if (currentResults[id]) {
-        delete currentResults[id];
-      }
+  // Eliminar también los productos scrapeados de esa keyword
+  if (currentResults[id]) {
+    delete currentResults[id];
+  }
 
-    // Guardar los cambios de vuelta en el storage 
-    await chrome.storage.local.set({
-        keywords: updatedKeywords,
-        results: currentResults 
-    });
+  // Guardar los cambios de vuelta en el storage 
+  await chrome.storage.local.set({
+    keywords: updatedKeywords,
+    results: currentResults
+  });
 
-    // Volver a renderizar la UI para reflejar el cambio
-    renderKeywords(updatedKeywords);
+  // Volver a renderizar la UI para reflejar el cambio
+  renderKeywords(updatedKeywords);
 };
 
 // Función para actualizar el estado de una keyword en el storage y UI
 async function updateKeywordStatus(id: string, updates: Partial<Keyword>) {
-    const data = await chrome.storage.local.get("keywords") as KeywordStorage;
-    const keywords = data.keywords || [];
+  const data = await chrome.storage.local.get("keywords") as KeywordStorage;
+  const keywords = data.keywords || [];
 
-    const index = keywords.findIndex(k => k.id === id);
-    if (index !== -1) {
-        keywords[index] = { ...keywords[index], ...updates };
-        await chrome.storage.local.set({ keywords });
-        renderKeywords(keywords); // Refrescar la lista visualmente
-    }
+  const index = keywords.findIndex(k => k.id === id);
+  if (index !== -1) {
+    keywords[index] = { ...keywords[index], ...updates };
+    await chrome.storage.local.set({ keywords });
+    renderKeywords(keywords); // Refrescar la lista visualmente
+  }
 }
 
 async function startScraping(keywordObj: Keyword, site: 'falabella' | 'mercadolibre') {
-    // Marcar como Running en la UI y Storage inmediatamente
-    await updateKeywordStatus(keywordObj.id, { status: 'Running' });
+  // Marcar como Running en la UI y Storage inmediatamente
+  await updateKeywordStatus(keywordObj.id, { status: 'Running' });
 
-    // 1. Construir la URL de búsqueda según el sitio
-    const searchUrl = site === 'falabella'
-        ? `https://www.falabella.com.pe/falabella-pe/search?Ntt=${encodeURIComponent(keywordObj.text)}`
-        : `https://listado.mercadolibre.com.pe/${encodeURIComponent(keywordObj.text)}`;
+  // 1. Construir la URL de búsqueda según el sitio
+  const searchUrl = site === 'falabella'
+    ? `https://www.falabella.com.pe/falabella-pe/search?Ntt=${encodeURIComponent(keywordObj.text)}`
+    : `https://listado.mercadolibre.com.pe/${encodeURIComponent(keywordObj.text)}`;
 
-    // Avisar al background que inicie el proceso
-    chrome.runtime.sendMessage({
-        action: "prepare_scraping",
-        url: searchUrl,
-        keyword: keywordObj.text,
-        id: keywordObj.id,
-        site: site
-    });
+  // Avisar al background que inicie el proceso
+  chrome.runtime.sendMessage({
+    action: "prepare_scraping",
+    url: searchUrl,
+    keyword: keywordObj.text,
+    id: keywordObj.id,
+    site: site
+  });
 
 }

@@ -45,6 +45,6 @@ export async function scrollToBottom(doc: Document): Promise<void> {
   });
 }
 
-export const waitSeconds = (s: number): Promise<void> => {
+export const waitSeconds = async (s: number): Promise<void> => {
     return new Promise(resolve => setTimeout(resolve, s * 1000));
 }
