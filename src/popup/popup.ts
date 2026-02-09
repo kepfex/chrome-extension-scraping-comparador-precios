@@ -1,4 +1,5 @@
 import type { Keyword, KeywordStorage, ScrapedProduct, ScrapeResultsStorage } from "../types";
+import { createAIModal } from "../utils/aiAnalysis";
 import { calculateStats, groupProducts } from "../utils/similarity";
 
 const input = document.getElementById('keywordInput') as HTMLInputElement
@@ -124,13 +125,22 @@ function renderKeywords(keywords: Keyword[], results?: ScrapeResultsStorage["res
                 </div>
             </fieldset>
 
-            <button 
-                data-action="stats" data-id="${kw.id}"
-                class="w-24 btn-action cursor-pointer bg-white hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all flex flex-col items-center justify-center gap-1 shadow-sm rounded-sm"
-            >
-              <span class="text-lg">📊</span>
-              <span class="text-[10px] font-bold uppercase">Estadística</span>
-            </button>
+            <div class="flex flex-col gap-2">
+              <button 
+                  data-action="stats" data-id="${kw.id}"
+                  class="w-24 btn-action cursor-pointer bg-white hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all flex items-center justify-center gap-1 shadow-sm rounded-sm"
+              >
+                <span class="text-lg">📊</span>
+                <span class="text-[10px] font-bold uppercase">Stats</span>
+              </button>
+              <button 
+                  data-action="ai" data-id="${kw.id}"
+                  class="w-24 btn-action cursor-pointer bg-white hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all flex items-center justify-center gap-1 shadow-sm rounded-sm"
+              >
+                <span class="text-lg">🤖</span>
+                <span class="text-[10px] font-bold uppercase">IA</span>
+              </button>
+            </div>
           </div>
 
           ${isRunning ? `
@@ -218,8 +228,39 @@ listContainer.addEventListener('click', async (e) => {
     }
   } else if (action === 'stats' && id) {
     openStatsModal(id);
+  } else if (action === "ai" && id) {
+    openAIModalAndAnalyze(id);
   }
 });
+
+async function openAIModalAndAnalyze(keywordId: string) {
+
+  createAIModal();
+
+  const contentDiv = document.getElementById("aiContent")!;
+
+  try {
+    const response = await new Promise<string>((resolve) => {
+      chrome.runtime.sendMessage(
+        { action: "analyze_with_ai", keywordId },
+        (res) => resolve(res?.ai || "No se obtuvo respuesta.")
+      );
+    });
+
+    contentDiv.innerHTML = `
+            <div class="whitespace-pre-wrap leading-relaxed">
+                ${response}
+            </div>
+        `;
+
+  } catch (error) {
+    contentDiv.innerHTML = `
+            <p class="text-red-600">
+                Error generando análisis.
+            </p>
+        `;
+  }
+}
 
 
 function renderProductList(products: ScrapedProduct[]) {
@@ -308,11 +349,10 @@ function buildStatsHTML(stats: any[]) {
                     </div>
 
                     ${group.bestSite ? `
-                        <div class="mt-2 p-2 rounded-lg text-xs font-semibold ${
-                            group.bestSite === "Falabella"
-                                ? "bg-lime-100 text-lime-700"
-                                : "bg-yellow-100 text-yellow-700"
-                        }">
+                        <div class="mt-2 p-2 rounded-lg text-xs font-semibold ${group.bestSite === "Falabella"
+        ? "bg-lime-100 text-lime-700"
+        : "bg-yellow-100 text-yellow-700"
+      }">
                             🏷 Mejor precio en ${group.bestSite} <br>
                             💰 Ahorro: S/ ${group.savings?.toFixed(2)} 
                             (${group.savingsPercent?.toFixed(1)}%)
@@ -387,4 +427,31 @@ async function startScraping(keywordObj: Keyword, site: 'falabella' | 'mercadoli
     site: site
   });
 
+}
+
+
+// Función para analizar con IA
+async function analyzeStatsWithAI(keywordId: Keyword['id']) {
+  const data = await chrome.storage.local.get("results") as ScrapeResultsStorage;
+  const results = data.results || {};
+  const keywordResults = results[keywordId];
+
+  if (!keywordResults) return;
+
+  const falabella = keywordResults.falabella || [];
+  const mercadolibre = keywordResults.mercadolibre || [];
+
+  const allProducts = [...falabella, ...mercadolibre];
+
+  // Reutiliza tu función de agrupación
+  const groups = groupProducts(allProducts);
+
+  return new Promise<string>((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: "analyze_with_ai", groups },
+      (response) => {
+        resolve(response?.ai || "No se obtuvo respuesta de IA");
+      }
+    );
+  });
 }

@@ -3,19 +3,38 @@
   "name": "Comparador de Precios - Scraping de Falabella y Mercado Libre",
   "version": "1.0",
   "description": "Resumen de productos para comparar precios",
-  "permissions": ["storage", "scripting", "activeTab"],
-  "host_permissions": ["http://localhost:3000/*"],
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://openrouter.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "src/popup/popup.html"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.falabella.com.pe/*"],
-      "js": ["content/falabella.js"]
+      "matches": [
+        "https://www.falabella.com.pe/*"
+      ],
+      "js": [
+        "content/falabella.js"
+      ]
     },
     {
-      "matches": ["https://*.mercadolibre.com.pe/*"],
-      "js": ["content/mercadoLibre.js"]
+      "matches": [
+        "https://*.mercadolibre.com.pe/*"
+      ],
+      "js": [
+        "content/mercadoLibre.js"
+      ]
     }
   ]
 }

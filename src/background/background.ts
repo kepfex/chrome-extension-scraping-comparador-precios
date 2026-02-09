@@ -1,4 +1,5 @@
 import type { KeywordStorage, PrepareScrapingMessage, ScrapedProduct, ScrapeResultsStorage } from "../types";
+import { analyzeKeywordWithAI } from "../utils/aiAnalysis";
 
 console.log('Extension background service worker running')
 
@@ -23,6 +24,17 @@ const MIN_PRODUCTS = {
     falabella: 60,
     mercadolibre: 100
 };
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+    if (request.action === "analyze_with_ai") {
+        analyzeKeywordWithAI(request.keywordId)
+            .then(result => sendResponse({ ai: result }))
+            .catch(() => sendResponse({ ai: "Error procesando IA" }));
+
+        return true; // importante para async
+    }
+});
 
 chrome.runtime.onMessage.addListener((request) => {
     if (request.action === "prepare_scraping") {
