@@ -2,7 +2,7 @@ import type { ScrapeResultsStorage } from "../types";
 
 export async function analyzeKeywordWithAI(keywordId: string) {
 
-  const OPENROUTER_API_KEY = "pega_aqui_tu_token_generado_en_open_router";
+  const OPENROUTER_API_KEY = "TU_API_KEY_AQUI"; // pega_aqui_tu_token_generado_en_open_router
 
   const data = await chrome.storage.local.get("results") as ScrapeResultsStorage;
   const results = data.results || {};
