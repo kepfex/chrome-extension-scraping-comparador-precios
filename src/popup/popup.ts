@@ -1,3 +1,5 @@
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import type { Keyword, KeywordStorage, ScrapedProduct, ScrapeResultsStorage } from "../types";
 import { createAIModal } from "../utils/aiAnalysis";
 import { calculateStats, groupProducts } from "../utils/similarity";
@@ -247,9 +249,12 @@ async function openAIModalAndAnalyze(keywordId: string) {
       );
     });
 
+    const rawHtml = await marked.parse(response);
+    const cleanHtml = DOMPurify.sanitize(rawHtml);
+
     contentDiv.innerHTML = `
             <div class="whitespace-pre-wrap leading-relaxed">
-                ${response}
+                ${cleanHtml}
             </div>
         `;
 
@@ -261,7 +266,6 @@ async function openAIModalAndAnalyze(keywordId: string) {
         `;
   }
 }
-
 
 function renderProductList(products: ScrapedProduct[]) {
   if (!products.length) {

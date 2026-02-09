@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* Estilos personalizados usando @theme o clases estándar */
 @layer components {

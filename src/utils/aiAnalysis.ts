@@ -2,20 +2,20 @@ import type { ScrapeResultsStorage } from "../types";
 
 export async function analyzeKeywordWithAI(keywordId: string) {
 
-    const OPENROUTER_API_KEY = "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";
+  const OPENROUTER_API_KEY = "pega_aqui_tu_token_generado_en_open_router";
 
-    const data = await chrome.storage.local.get("results") as ScrapeResultsStorage;
-    const results = data.results || {};
-    const keywordResults = results[keywordId];
+  const data = await chrome.storage.local.get("results") as ScrapeResultsStorage;
+  const results = data.results || {};
+  const keywordResults = results[keywordId];
 
-    if (!keywordResults) {
-        return "No hay datos suficientes para analizar.";
-    }
+  if (!keywordResults) {
+    return "No hay datos suficientes para analizar.";
+  }
 
-    const falabella = keywordResults.falabella || [];
-    const mercadolibre = keywordResults.mercadolibre || [];
+  const falabella = keywordResults.falabella || [];
+  const mercadolibre = keywordResults.mercadolibre || [];
 
-    const prompt = `
+  const prompt = `
         Analiza estos productos comparados entre Falabella y MercadoLibre:
 
         Falabella:
@@ -36,39 +36,46 @@ export async function analyzeKeywordWithAI(keywordId: string) {
 
         Devuelve la respuesta estructurada en texto claro.
         `;
-    
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        },
-        body: JSON.stringify({
-            model: "meta-llama/llama-3.3-70b-instruct",
-            messages: [
-                { role: "system", content: "Eres un analista experto en precios e-commerce." },
-                { role: "user", content: prompt }
-            ],
-            temperature: 0.2
-        })
-    });
 
-    const json = await res.json();
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "qwen/qwen3-next-80b-a3b-instruct",
+      // model: "meta-llama/llama-3.3-70b-instruct",
+        // model: "openai/gpt-oss-120b",
+        // model: "google/gemma-3-27b-it",
+      //   model: "tngtech/deepseek-r1t2-chimera:free",
+      //   model: "nvidia/nemotron-3-nano-30b-a3b",
+      //   model: "upstage/solar-pro-3:free",
+      messages: [
+        { role: "system", content: "Eres un analista experto en precios e-commerce." },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.2
+    })
+  });
 
-    return json.choices?.[0]?.message?.content || "Sin respuesta.";
+  const json = await res.json();
+
+  return json.choices?.[0]?.message?.content || "Sin respuesta.";
 }
 
 
 export function createAIModal() {
-    const modal = document.createElement("div");
-    modal.id = "aiModal";
-    modal.className = `
+  const modal = document.createElement("div");
+  modal.id = "aiModal";
+  modal.className = `
     fixed inset-0 bg-black/40 backdrop-blur-sm 
     flex items-center justify-center z-50
   `;
 
-    modal.innerHTML = `
+  // prose prose-sm
+  modal.innerHTML = `
     <div class="bg-white w-[600px] max-h-[80vh] rounded-2xl shadow-xl p-5 relative flex flex-col">
       
       <button id="closeAIModal"
@@ -80,15 +87,23 @@ export function createAIModal() {
         🤖 Análisis Inteligente
       </h2>
 
-      <div id="aiContent" class="text-sm overflow-y-auto pr-2 flex-1">
+      <div id="aiContent" 
+          class="prose prose-sm max-w-none
+            prose-headings:mb-0 prose-headings:mt-0
+            prose-p:mb-0
+            prose-ul:mb-0 prose-ul:mt-0
+            prose-li:mb-0
+            prose-hr:my-0
+            leading-relaxed
+            overflow-y-auto pr-2 flex-1">
         <p class="text-slate-400 animate-pulse">Generando análisis...</p>
       </div>
 
     </div>
   `;
 
-    document.body.appendChild(modal);
+  document.body.appendChild(modal);
 
-    document.getElementById("closeAIModal")!
-        .addEventListener("click", () => modal.remove());
+  document.getElementById("closeAIModal")!
+    .addEventListener("click", () => modal.remove());
 }

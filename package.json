@@ -12,12 +12,15 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@types/chrome": "^0.1.36",
     "typescript": "~5.9.3",
     "vite": "^7.2.4"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
+    "dompurify": "^3.3.1",
+    "marked": "^17.0.1",
     "tailwindcss": "^4.1.18"
   }
 }
