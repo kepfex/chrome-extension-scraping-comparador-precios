@@ -47,12 +47,6 @@ export type ProductGroup = {
   falabellaCount: number;
   mercadolibreCount: number;
 };
-// export type ProductGroupStats = ProductGroup & {
-//   minPrice: number;
-//   maxPrice: number;
-//   avgPrice: number;
-//   priceDifference: number | null;
-// };
 
 export type ProductGroupStats = {
   key: string;

@@ -8,7 +8,7 @@ const STOPWORDS = [
   "nuevo", "oficial"
 ];
 
-export function normalizeTitle(title: string): string {
+function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
     .normalize("NFD") // separa tildes

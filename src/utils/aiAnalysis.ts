@@ -1,8 +1,8 @@
 import type { ScrapeResultsStorage } from "../types";
 
 export async function analyzeKeywordWithAI(keywordId: string) {
-
-  const OPENROUTER_API_KEY = "TU_API_KEY_AQUI"; // pega_aqui_tu_token_generado_en_open_router
+// TU_API_KEY_AQUI
+  const OPENROUTER_API_KEY = "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"; // pega_aqui_tu_token_generado_en_open_router
 
   const data = await chrome.storage.local.get("results") as ScrapeResultsStorage;
   const results = data.results || {};
@@ -45,9 +45,9 @@ export async function analyzeKeywordWithAI(keywordId: string) {
       "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "qwen/qwen3-next-80b-a3b-instruct",
+      // model: "qwen/qwen3-next-80b-a3b-instruct",
       // model: "meta-llama/llama-3.3-70b-instruct",
-        // model: "openai/gpt-oss-120b",
+        model: "openai/gpt-oss-120b",
         // model: "google/gemma-3-27b-it",
       //   model: "tngtech/deepseek-r1t2-chimera:free",
       //   model: "nvidia/nemotron-3-nano-30b-a3b",
@@ -65,45 +65,3 @@ export async function analyzeKeywordWithAI(keywordId: string) {
   return json.choices?.[0]?.message?.content || "Sin respuesta.";
 }
 
-
-export function createAIModal() {
-  const modal = document.createElement("div");
-  modal.id = "aiModal";
-  modal.className = `
-    fixed inset-0 bg-black/40 backdrop-blur-sm 
-    flex items-center justify-center z-50
-  `;
-
-  // prose prose-sm
-  modal.innerHTML = `
-    <div class="bg-white w-[600px] max-h-[80vh] rounded-2xl shadow-xl p-5 relative flex flex-col">
-      
-      <button id="closeAIModal"
-        class="absolute top-3 right-3 text-slate-400 hover:text-red-500">
-        ✕
-      </button>
-
-      <h2 class="text-lg font-extrabold text-purple-700 mb-4">
-        🤖 Análisis Inteligente
-      </h2>
-
-      <div id="aiContent" 
-          class="prose prose-sm max-w-none
-            prose-headings:mb-0 prose-headings:mt-0
-            prose-p:mb-0
-            prose-ul:mb-0 prose-ul:mt-0
-            prose-li:mb-0
-            prose-hr:my-0
-            leading-relaxed
-            overflow-y-auto pr-2 flex-1">
-        <p class="text-slate-400 animate-pulse">Generando análisis...</p>
-      </div>
-
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById("closeAIModal")!
-    .addEventListener("click", () => modal.remove());
-}
