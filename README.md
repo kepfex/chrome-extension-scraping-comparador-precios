@@ -217,3 +217,17 @@ La respuesta:
 ---
 
 ## 🖼 Evidencia Visual
+
+## Popup principal
+
+<img width="1093" height="655" alt="Captura de pantalla (7)" src="https://github.com/user-attachments/assets/3f7f071a-f052-475b-b0d5-ae2b7c0789d5" />
+
+## Estadísticas comparativas
+
+<img width="1089" height="658" alt="Captura de pantalla (8)" src="https://github.com/user-attachments/assets/f81315e3-35e1-4a95-bc69-56f2648a3c8b" />
+
+
+## Análisis IA
+
+<img width="1090" height="653" alt="Captura de pantalla (9)" src="https://github.com/user-attachments/assets/13256d44-effe-42b3-bca5-d15d800471ef" />
+
